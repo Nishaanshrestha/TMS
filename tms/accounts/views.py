@@ -34,4 +34,34 @@ class UserView(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication, SessionAuthentication]
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-   
+
+    def get_queryset(self):
+        user =self.request.user
+        if user.is_superuser:
+            return CustomUser.objects.all()
+        elif user.is_staff or user.is_active:
+            return CustomUser.objects.filter(pk=user.pk)
+        else:
+            return CustomUser.objects.none()
+        
+    def create(self, request, *args, **kwargs):
+        print(request.data)
+        email=request.data.get('email')
+        username=request.data.get('username')
+        password=request.data.get('password')
+        first_name=request.data.get('first_name')
+        last_name=request.data.get('last_name')
+        user=CustomUser.objects.create_user(email=email,username=username,password=password,first_name=first_name,last_name=last_name)
+        if user:
+            return super().create(request,*args,**kwargs)
+        else:
+            return Response({'error':'failed to create user'},status=status.HTTP_400_BAD_REQUEST)
+        
+    class Meta:
+            model=CustomUser
+            fields='__all__'
+        
+
+
+
+
